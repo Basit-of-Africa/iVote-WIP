@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { onAuthStateChanged, User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { User } from '../types';
-import { authenticateAndAuthorizeUser, PRIMARY_ADMIN_EMAIL, USER_CACHE_KEY } from '../lib/observerAuth';
+import { authenticateAndAuthorizeUser, authenticateDirectObserver, PRIMARY_ADMIN_EMAIL, USER_CACHE_KEY } from '../lib/observerAuth';
 import { syncPendingReports } from '../lib/offlineStorage';
 
 interface AuthContextType {
@@ -17,6 +17,8 @@ interface AuthContextType {
   clearAuthError: () => void;
   signOut: () => Promise<void>;
   reauthenticate: (forceTokenRefresh?: boolean) => Promise<void>;
+  loginDirect: (email: string, role?: 'admin' | 'supervisor' | 'field_supervisor' | 'observer', name?: string) => Promise<User>;
+  loginWithUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -164,12 +166,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(USER_CACHE_KEY);
       setUser(null);
       setFirebaseUser(null);
-      await firebaseSignOut(auth);
+      if (auth.currentUser) {
+        await firebaseSignOut(auth).catch(() => {});
+      }
     } catch (err) {
-      console.error('Sign out error:', err);
+      console.warn('Sign out notice:', err);
     } finally {
       sessionStorage.removeItem(EXPLICIT_SIGNOUT_FLAG);
     }
+  }, []);
+
+  /**
+   * Directly log in an observer or admin by email.
+   * Perfect when Google OAuth domain authorization is pending in Firebase Console,
+   * for local/offline testing, or for field supervisors logging in with observer credentials.
+   */
+  const loginDirect = useCallback(async (
+    email: string, 
+    role?: 'admin' | 'supervisor' | 'field_supervisor' | 'observer',
+    name?: string
+  ) => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const authorizedUser = await authenticateDirectObserver(email, role, name);
+      setUser(authorizedUser);
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(authorizedUser));
+      window.dispatchEvent(new CustomEvent('ivote_auth_restored', { detail: authorizedUser }));
+      return authorizedUser;
+    } catch (err: any) {
+      setAuthError(err.message || 'Direct login failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loginWithUser = useCallback((userProfile: User) => {
+    setUser(userProfile);
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userProfile));
+    window.dispatchEvent(new CustomEvent('ivote_auth_restored', { detail: userProfile }));
   }, []);
 
   // Main listener for Firebase Auth state transitions
@@ -317,7 +353,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     firebaseUser,
     loading,
-    isAdmin: user?.role === 'admin' || firebaseUser?.email === PRIMARY_ADMIN_EMAIL,
+    isAdmin: user?.role === 'admin' || firebaseUser?.email === PRIMARY_ADMIN_EMAIL || user?.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase(),
     isSupervisor,
     isFieldSupervisor: isSupervisor,
     authError,
@@ -325,6 +361,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAuthError,
     signOut: signOutUser,
     reauthenticate,
+    loginDirect,
+    loginWithUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

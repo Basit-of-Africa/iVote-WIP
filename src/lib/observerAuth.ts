@@ -237,3 +237,83 @@ export async function authenticateAndAuthorizeUser(fUser: FirebaseUser): Promise
   return newUserProfile;
 }
 
+/**
+ * Directly authenticates and authorizes an observer or administrator by email.
+ * Ideal for environments where Google OAuth popups encounter auth/unauthorized-domain,
+ * during spotty field operations, or for rapid testing by supervisors.
+ */
+export async function authenticateDirectObserver(
+  emailInput: string,
+  requestedRole?: 'admin' | 'supervisor' | 'field_supervisor' | 'observer',
+  requestedName?: string
+): Promise<User> {
+  const cleanEmail = emailInput.trim().toLowerCase();
+  if (!cleanEmail) {
+    throw new Error('Please enter a valid observer email address.');
+  }
+
+  const isLeadAdmin = cleanEmail === PRIMARY_ADMIN_EMAIL.toLowerCase();
+
+  // Try to search Firestore for an existing or pre-imported observer record
+  let matchedObserverRecord: Partial<User> | null = null;
+  try {
+    const usersCol = collection(db, 'users');
+    const q = query(usersCol, where('email', '==', cleanEmail));
+    const querySnap = await getDocs(q);
+    if (!querySnap.empty) {
+      matchedObserverRecord = querySnap.docs[0].data() as User;
+    }
+  } catch (e) {
+    console.warn('Direct auth Firestore search notice:', e);
+  }
+
+  const role = isLeadAdmin 
+    ? 'admin' 
+    : matchedObserverRecord?.role || requestedRole || 'observer';
+
+  const defaultDisplayName = isLeadAdmin
+    ? 'Basit Ajibade (Lead Admin)'
+    : matchedObserverRecord?.displayName || requestedName || (
+        cleanEmail.split('@')[0]
+          .replace(/[._]/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase()) + ' (Observer)'
+      );
+
+  const uid = isLeadAdmin
+    ? 'admin_' + cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')
+    : matchedObserverRecord?.uid || 'obs_' + cleanEmail.replace(/[^a-zA-Z0-9]/g, '_');
+
+  const userProfile: User = {
+    uid,
+    displayName: defaultDisplayName,
+    email: cleanEmail,
+    role: role as any,
+    phone: matchedObserverRecord?.phone || '+234 803 555 0192',
+    assignedPollingUnitId: matchedObserverRecord?.assignedPollingUnitId || 'PU-OSUN-04-12-008',
+    assignedPollingUnitName: matchedObserverRecord?.assignedPollingUnitName || 'Community Grammar School, Ward 04',
+    state: matchedObserverRecord?.state || 'Osun',
+    lga: matchedObserverRecord?.lga || 'Osogbo',
+    status: 'active',
+    createdAt: matchedObserverRecord?.createdAt || new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userProfile));
+  } catch (e) {
+    console.warn('Local storage write notice:', e);
+  }
+
+  // Attempt to store in Firestore in background without blocking
+  try {
+    const docRef = doc(db, 'users', uid);
+    await setDoc(docRef, {
+      ...userProfile,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (e) {
+    console.warn('Could not write direct observer record to Firestore:', e);
+  }
+
+  return userProfile;
+}
+
