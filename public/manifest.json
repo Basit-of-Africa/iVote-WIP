@@ -1,0 +1,43 @@
+{
+  "short_name": "iVote",
+  "name": "iVote Election Monitor - Real-Time Observation & Offline Reporting",
+  "description": "Real-time Election Monitoring, Observer Geolocation Check-in, SOS Emergency Alert, and Offline Reporting",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/",
+  "id": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "categories": ["utilities", "news", "government"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Submit Report",
+      "short_name": "Report",
+      "description": "Submit a new election observation report",
+      "url": "/report",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Incident History",
+      "short_name": "Incidents",
+      "description": "View SOS emergency alerts and incident logs",
+      "url": "/incidents",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}

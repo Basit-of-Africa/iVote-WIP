@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'ajibadebasit40@gmail.com' ||
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'role', 'email']) &&
+             data.uid == request.auth.uid &&
+             data.role in ['admin', 'observer'] &&
+             data.email is string && data.email.size() <= 200;
+    }
+
+    function isValidReport(data) {
+      return data.keys().hasAll(['id', 'pollingUnitId', 'observerId', 'timestamp', 'type', 'payload']) &&
+             isValidId(data.id) &&
+             isValidId(data.pollingUnitId) &&
+             data.observerId == request.auth.uid &&
+             data.timestamp == request.time &&
+             data.type in ['accreditation', 'incident', 'result'];
+    }
+
+    function isValidIncident(data) {
+      return data.keys().hasAll(['id', 'reportId', 'pollingUnitId', 'severity', 'status', 'description', 'timestamp']) &&
+             isValidId(data.id) &&
+             isValidId(data.reportId) &&
+             isValidId(data.pollingUnitId) &&
+             data.severity in ['low', 'medium', 'high', 'critical'] &&
+             data.status in ['pending', 'investigating', 'resolved'] &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.timestamp == request.time;
+    }
+
+    // --- Collection Matches ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().role == 'observer';
+      allow update: if (isAdmin() || (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'assignedPollingUnitId']))) && isValidUser(incoming());
+    }
+
+    match /polling_units/{unitId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /reports/{reportId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isEmailVerified() && isValidReport(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    match /incidents/{incidentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isEmailVerified() && isValidIncident(incoming());
+      allow update: if isAdmin() && isValidIncident(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'description']);
+      allow delete: if isAdmin();
+    }
+  }
+}
