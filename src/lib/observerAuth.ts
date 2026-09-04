@@ -317,3 +317,136 @@ export async function authenticateDirectObserver(
   return userProfile;
 }
 
+export interface DemoUserAccount {
+  username: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'supervisor' | 'field_supervisor' | 'observer';
+  displayName: string;
+  phone: string;
+  assignedPollingUnitId: string;
+  assignedPollingUnitName: string;
+  state: string;
+  lga: string;
+  description: string;
+}
+
+export const DEMO_ACCOUNTS: DemoUserAccount[] = [
+  {
+    username: 'admin',
+    email: 'ajibadebasit40@gmail.com',
+    password: 'password123',
+    role: 'admin',
+    displayName: 'Basit Ajibade (Lead Administrator)',
+    phone: '+234 803 555 0192',
+    assignedPollingUnitId: 'PU-OSUN-04-12-008',
+    assignedPollingUnitName: 'State Collation Center, Osogbo HQ',
+    state: 'Osun',
+    lga: 'Osogbo',
+    description: 'Full governance, election rounds, user verification & audit oversight'
+  },
+  {
+    username: 'supervisor',
+    email: 'kemi.adebayo@ivote.ng',
+    password: 'password123',
+    role: 'supervisor',
+    displayName: 'Kemi Adebayo (Field Supervisor)',
+    phone: '+234 802 333 4455',
+    assignedPollingUnitId: 'PU-LAGOS-01-04-012',
+    assignedPollingUnitName: 'Ward 04 Command Hub, Ikeja',
+    state: 'Lagos',
+    lga: 'Ikeja',
+    description: 'Incident escalation, field directive broadcast & observer monitoring'
+  },
+  {
+    username: 'observer',
+    email: 'emeka.okonkwo@ivote.ng',
+    password: 'password123',
+    role: 'observer',
+    displayName: 'Emeka Okonkwo (Accredited Observer)',
+    phone: '+234 814 777 8899',
+    assignedPollingUnitId: 'PU-FCT-06-02-003',
+    assignedPollingUnitName: 'Community Primary School, Garki Ward 02',
+    state: 'FCT Abuja',
+    lga: 'Municipal',
+    description: 'Accreditation reporting, incident alerts & result tally submission'
+  }
+];
+
+/**
+ * Authenticates user credentials against the demo account roster.
+ */
+export async function authenticateDemoLogin(
+  usernameOrEmail: string,
+  passwordInput: string
+): Promise<User> {
+  const cleanInput = usernameOrEmail.trim().toLowerCase();
+  const cleanPassword = passwordInput.trim();
+
+  if (!cleanInput) {
+    throw new Error('Please enter your username or email address.');
+  }
+  if (!cleanPassword) {
+    throw new Error('Please enter your password.');
+  }
+
+  // Find matching demo account
+  const matched = DEMO_ACCOUNTS.find(
+    acc => acc.username.toLowerCase() === cleanInput || acc.email.toLowerCase() === cleanInput
+  );
+
+  if (matched) {
+    // Check password (accept password123 or common aliases)
+    const validPasswords = [matched.password, 'admin', 'demo', 'password', 'ivote2026', 'admin123', 'supervisor123', 'observer123'];
+    if (!validPasswords.includes(cleanPassword)) {
+      throw new Error(`Incorrect password. Demo password is: ${matched.password}`);
+    }
+
+    const uid = 'demo_' + matched.username + '_' + Math.abs(
+      matched.email.split('').reduce((acc, char) => (acc << 5) - acc + char.charCodeAt(0), 0)
+    );
+
+    const userProfile: User = {
+      uid,
+      displayName: matched.displayName,
+      email: matched.email,
+      role: matched.role,
+      phone: matched.phone,
+      assignedPollingUnitId: matched.assignedPollingUnitId,
+      assignedPollingUnitName: matched.assignedPollingUnitName,
+      state: matched.state,
+      lga: matched.lga,
+      status: 'active',
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userProfile));
+    } catch (e) {
+      console.warn('Session cache storage notice:', e);
+    }
+
+    // Try background update to Firestore if online
+    try {
+      await setDoc(doc(db, 'users', uid), {
+        ...userProfile,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+    } catch (e) {
+      console.warn('Firestore sync notice for demo user:', e);
+    }
+
+    return userProfile;
+  }
+
+  // If not a pre-configured demo username, check if it's an email address
+  if (cleanInput.includes('@')) {
+    if (cleanPassword.length < 4) {
+      throw new Error('Password must be at least 4 characters.');
+    }
+    return authenticateDirectObserver(cleanInput, 'observer');
+  }
+
+  throw new Error(`Demo account "${usernameOrEmail}" not found. Try "admin", "supervisor", or "observer".`);
+}
+

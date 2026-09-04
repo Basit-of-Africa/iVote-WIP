@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useCallb
 import { onAuthStateChanged, User as FirebaseUser, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { User } from '../types';
-import { authenticateAndAuthorizeUser, authenticateDirectObserver, PRIMARY_ADMIN_EMAIL, USER_CACHE_KEY } from '../lib/observerAuth';
+import { authenticateAndAuthorizeUser, authenticateDirectObserver, authenticateDemoLogin, PRIMARY_ADMIN_EMAIL, USER_CACHE_KEY } from '../lib/observerAuth';
 import { syncPendingReports } from '../lib/offlineStorage';
 
 interface AuthContextType {
@@ -18,6 +18,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   reauthenticate: (forceTokenRefresh?: boolean) => Promise<void>;
   loginDirect: (email: string, role?: 'admin' | 'supervisor' | 'field_supervisor' | 'observer', name?: string) => Promise<User>;
+  loginDemo: (usernameOrEmail: string, password: string) => Promise<User>;
   loginWithUser: (user: User) => void;
 }
 
@@ -202,6 +203,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  /**
+   * Log in using demo username and password credentials.
+   */
+  const loginDemo = useCallback(async (usernameOrEmail: string, password: string) => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const authorizedUser = await authenticateDemoLogin(usernameOrEmail, password);
+      setUser(authorizedUser);
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(authorizedUser));
+      window.dispatchEvent(new CustomEvent('ivote_auth_restored', { detail: authorizedUser }));
+      return authorizedUser;
+    } catch (err: any) {
+      setAuthError(err.message || 'Login failed');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const loginWithUser = useCallback((userProfile: User) => {
     setUser(userProfile);
     localStorage.setItem(USER_CACHE_KEY, JSON.stringify(userProfile));
@@ -362,6 +383,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut: signOutUser,
     reauthenticate,
     loginDirect,
+    loginDemo,
     loginWithUser,
   };
 

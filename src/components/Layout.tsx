@@ -358,20 +358,62 @@ export default function Layout() {
                </motion.span>
              )}
           </div>
-          <div className="flex items-center gap-3">
+          {/* Vote Monitor Aligned Action Nav Bar */}
+          <div className="flex items-center gap-2.5">
+             {/* Election Scope Selector */}
+             <div className="flex items-center">
+               <ElectionScopeSelector compact />
+             </div>
+
+             {/* Primary Quick Action: Submit Field Report */}
+             <Link
+               to="/report"
+               className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer select-none"
+               title="Submit New Field Observation Report"
+             >
+               <PlusCircle className="w-3.5 h-3.5" />
+               <span className="hidden xl:inline">Submit Report</span>
+             </Link>
+
+             {/* Guidelines & Conduct */}
              <button
+               type="button"
                onClick={() => setShowGuidelinesModal(true)}
-               className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200/80 transition-all cursor-pointer"
+               className="hidden lg:inline-flex items-center gap-1.5 h-9 px-3 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl border border-gray-200 transition-all cursor-pointer shadow-2xs"
+               title="Observer Code of Conduct & Field Guidelines"
              >
                <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-               <span>Code of Conduct</span>
+               <span>Guidelines</span>
              </button>
-             <ElectionScopeSelector compact />
+
              <PushNotificationPrompt compact />
              <InstallPWAButton />
-             <DangerButton variant="header" />
-             <div className="h-8 w-px bg-gray-100 mx-1" />
+
+             {/* Emergency / Threat Alert */}
+             <DangerButton variant="header" className="!h-9 !py-0 !rounded-xl text-xs" />
+
+             {/* Subtle Divider */}
+             <div className="h-5 w-px bg-gray-200 mx-0.5" />
+
+             {/* Notification Center */}
              <NotificationCenter />
+
+             {/* Observer Profile Pill */}
+             {user && (
+               <div className="hidden xl:flex items-center gap-2 pl-1.5 py-1 pr-2.5 bg-white border border-gray-200 rounded-xl shadow-2xs">
+                 <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">
+                   {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                 </div>
+                 <div className="flex flex-col text-left leading-none">
+                   <span className="text-[11px] font-bold text-gray-800 truncate max-w-[110px]">
+                     {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
+                   </span>
+                   <span className="text-[9px] font-semibold text-gray-400 capitalize mt-0.5">
+                     {user.role || 'Observer'}
+                   </span>
+                 </div>
+               </div>
+             )}
           </div>
         </header>
 
