@@ -28,7 +28,13 @@ import {
   Users,
   Globe,
   BookOpen,
-  ShieldCheck
+  ShieldCheck,
+  Building2,
+  Camera,
+  Bell,
+  FileCheck,
+  PlusCircle,
+  Radio
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -71,17 +77,36 @@ export default function Layout() {
     };
   }, [isMobileMenuOpen, showGuidelinesModal]);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Public Live Feed', href: '/', icon: Globe },
-    { name: 'Incident Map', href: '/map', icon: MapIcon },
-    // Administrators and field supervisors can access full reports feed and observers roster
-    ...(isAdmin || isSupervisor ? [
-      { name: 'Reports', href: '/reports', icon: FileText },
-      { name: 'Observers', href: '/observers', icon: Users }
-    ] : []),
-    { name: 'Report', href: '/report', icon: FilePlus },
-    { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
+  // Grouped Navigation Sections aligned with Vote Monitor principles
+  const navigationSections = [
+    {
+      title: 'Operations',
+      items: [
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Election Rounds', href: '/elections', icon: Vote },
+        { name: 'Polling Stations', href: '/polling-stations', icon: Building2 },
+        { name: 'Incident Map', href: '/map', icon: MapIcon },
+      ]
+    },
+    {
+      title: 'Reporting & Evidence',
+      items: [
+        { name: 'Reports', href: '/reports', icon: FileText },
+        { name: 'Incidents', href: '/incidents', icon: AlertTriangle },
+        { name: 'Forms', href: '/forms', icon: FileCheck },
+        { name: 'Evidence', href: '/evidence', icon: Camera },
+      ]
+    },
+    {
+      title: 'Governance',
+      items: [
+        { name: 'Observers', href: '/observers', icon: Users },
+        { name: 'Notifications', href: '/notifications', icon: Bell },
+        ...(isAdmin || isSupervisor ? [
+          { name: 'Administration', href: '/admin', icon: ShieldCheck }
+        ] : [])
+      ]
+    }
   ];
 
   const handleSignOut = () => {
@@ -113,58 +138,89 @@ export default function Layout() {
       {/* Sidebar for Desktop */}
       <aside 
         aria-label="Desktop Sidebar Navigation"
-        className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 sticky top-0 h-screen"
+        className="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 sticky top-0 h-screen shrink-0"
       >
-        <div className="p-6 flex items-center gap-3 border-b border-gray-100">
-          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center shadow-sm">
-            <Vote className="text-white w-6 h-6" aria-hidden="true" />
+        <div className="p-5 flex items-center justify-between border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center shadow-xs">
+              <Vote className="text-white w-5 h-5" aria-hidden="true" />
+            </div>
+            <div>
+              <h1 className="font-bold text-gray-900 leading-none font-serif text-base">iVote</h1>
+              <p className="text-[11px] text-gray-500 mt-0.5 font-sans">Election Monitor</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-gray-900 leading-none">iVote</h1>
-            <p className="text-xs text-gray-500 mt-1">Election Monitor</p>
-          </div>
+          <Link
+            to="/"
+            title="Public Live Feed"
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Globe className="w-4 h-4" />
+          </Link>
         </div>
 
-        <nav aria-label="Main Navigation" className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                aria-current={isActive ? 'page' : undefined}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 min-h-[44px] ${
-                  isActive 
-                    ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm' 
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
-                }`}
-              >
-                <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-emerald-600' : ''}`} aria-hidden="true" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+        {/* Primary Action Button (Submit Report) */}
+        <div className="px-4 pt-4 pb-2">
+          <Link
+            to="/report"
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors min-h-[40px]"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Submit Report</span>
+          </Link>
+        </div>
+
+        {/* Grouped Navigation Links */}
+        <nav aria-label="Main Navigation" className="flex-1 px-3 py-2 space-y-5 overflow-y-auto">
+          {navigationSections.map((section) => (
+            <div key={section.title} className="space-y-1">
+              <p className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                {section.title}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-150 text-xs font-semibold min-h-[38px] ${
+                        isActive 
+                          ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60 shadow-xs' 
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <item.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-emerald-600' : 'text-gray-400'}`} aria-hidden="true" />
+                      <span className="truncate">{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100">
-          <div className="bg-gray-50 rounded-2xl p-4 mb-4 space-y-2">
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Account</p>
-              <p className="text-sm font-medium text-gray-900 mt-1 truncate">{user?.displayName}</p>
-              <p className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full inline-block mt-1 uppercase tracking-wider border ${getRoleBadgeClasses()}`}>
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+          <div className="bg-white rounded-xl p-3 mb-3 border border-gray-200/80 shadow-xs space-y-1.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Observer Session</p>
+              <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider border ${getRoleBadgeClasses()}`}>
                 {getRoleLabel()}
-              </p>
+              </span>
             </div>
-            <div className="pt-2 border-t border-gray-200/60">
-              <InstallPWAButton className="w-full justify-center" />
+            <p className="text-xs font-bold text-gray-900 truncate">{user?.displayName || user?.email}</p>
+            <div className="pt-1.5 border-t border-gray-100">
+              <InstallPWAButton className="w-full justify-center text-xs py-1" />
             </div>
           </div>
           <button
             onClick={handleSignOut}
             aria-label="Sign out of your account"
-            className="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-medium text-sm min-h-[44px] cursor-pointer"
+            className="flex items-center gap-2 w-full px-3 py-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors font-semibold text-xs min-h-[36px] cursor-pointer"
           >
-            <LogOut className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <LogOut className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
             <span>Sign Out</span>
           </button>
         </div>
@@ -174,7 +230,7 @@ export default function Layout() {
       <div className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-2">
           <Vote className="text-emerald-600 w-6 h-6" aria-hidden="true" />
-          <span className="font-bold text-gray-900 tracking-tight text-lg">iVote</span>
+          <span className="font-bold text-gray-900 tracking-tight text-lg font-serif">iVote</span>
         </div>
         <div className="flex items-center gap-2">
           <DangerButton variant="compact" />
@@ -192,6 +248,7 @@ export default function Layout() {
         </div>
       </div>
 
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -204,46 +261,67 @@ export default function Layout() {
             exit={{ opacity: 0, y: -20 }}
             className="md:hidden fixed inset-0 z-40 pt-20 bg-white overflow-y-auto"
           >
-            <nav aria-label="Mobile Main Navigation" className="p-6 space-y-2">
-              <div className="pb-2">
-                <InstallPWAButton className="w-full justify-center py-3 text-sm min-h-[44px]" />
+            <nav aria-label="Mobile Main Navigation" className="p-6 space-y-6">
+              <div className="space-y-2">
+                <Link
+                  to="/report"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-emerald-600 text-white font-bold text-sm rounded-xl shadow-xs"
+                >
+                  <PlusCircle className="w-5 h-5" />
+                  <span>Submit Field Report</span>
+                </Link>
+                <InstallPWAButton className="w-full justify-center py-2.5 text-xs min-h-[40px]" />
               </div>
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={`flex items-center gap-4 p-4 text-base font-semibold rounded-2xl min-h-[48px] transition-colors ${
-                      isActive ? 'bg-emerald-50 text-emerald-800' : 'text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <item.icon className="w-6 h-6 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setShowGuidelinesModal(true);
-                }}
-                className="flex items-center gap-4 p-4 text-base font-semibold text-emerald-800 hover:bg-emerald-50 rounded-2xl w-full text-left cursor-pointer min-h-[48px]"
-              >
-                <BookOpen className="w-6 h-6 text-emerald-600 shrink-0" aria-hidden="true" />
-                <span>Code of Conduct & Guidelines</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="flex items-center gap-4 p-4 text-base font-semibold text-red-600 hover:bg-red-50 rounded-2xl w-full text-left cursor-pointer min-h-[48px]"
-              >
-                <LogOut className="w-6 h-6 shrink-0" aria-hidden="true" />
-                <span>Sign Out</span>
-              </button>
+
+              {navigationSections.map((section) => (
+                <div key={section.title} className="space-y-2">
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                    {section.title}
+                  </p>
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          aria-current={isActive ? 'page' : undefined}
+                          className={`flex items-center gap-3 p-3.5 text-sm font-semibold rounded-xl min-h-[44px] transition-colors ${
+                            isActive ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden="true" />
+                          <span>{item.name}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-4 border-t border-gray-100 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowGuidelinesModal(true);
+                  }}
+                  className="flex items-center gap-3 p-3 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 rounded-xl w-full text-left cursor-pointer min-h-[44px]"
+                >
+                  <BookOpen className="w-5 h-5 text-emerald-600 shrink-0" aria-hidden="true" />
+                  <span>Code of Conduct & Guidelines</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 p-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-xl w-full text-left cursor-pointer min-h-[44px]"
+                >
+                  <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </nav>
           </motion.div>
         )}

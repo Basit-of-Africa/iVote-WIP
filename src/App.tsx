@@ -12,6 +12,12 @@ import Incidents from './pages/Incidents';
 import IncidentDetail from './pages/IncidentDetail';
 import MapPage from './pages/MapPage';
 import Observers from './pages/Observers';
+import ElectionRounds from './pages/ElectionRounds';
+import PollingStations from './pages/PollingStations';
+import Forms from './pages/Forms';
+import Evidence from './pages/Evidence';
+import Notifications from './pages/Notifications';
+import Administration from './pages/Administration';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -40,13 +46,19 @@ function AppRoutes() {
         }
       >
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/report" element={<Report />} />
-        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/elections" element={<ElectionRounds />} />
+        <Route path="/polling-stations" element={<PollingStations />} />
+        <Route path="/forms" element={<Forms />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/reports/:id/edit" element={<ProtectedRoute adminOnly><EditReport /></ProtectedRoute>} />
-        <Route path="/observers" element={<ProtectedRoute><Observers /></ProtectedRoute>} />
+        <Route path="/report" element={<Report />} />
         <Route path="/incidents" element={<Incidents />} />
         <Route path="/incidents/:id" element={<IncidentDetail />} />
+        <Route path="/evidence" element={<Evidence />} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/observers" element={<Observers />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/admin" element={<Administration />} />
       </Route>
 
       {/* Fallback */}
