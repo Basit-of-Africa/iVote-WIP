@@ -1,25 +1,23 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
-export async function summarizeIncident(description: string, severity: string) {
+export async function summarizeIncident(description: string, severity: string): Promise<string> {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `You are a senior election security analyst. Please provide a brief, professional summary and potential action plan for the following incident report. 
-    Report Description: "${description}"
-    Severity Level: ${severity}
-    
-    Format the response as two short sections:
-    1. SUMMARY
-    2. RECOMMENDED ACTION
-    
-    Keep it concise and professional.`;
+    const response = await fetch('/api/gemini/summarize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ description, severity }),
+    });
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    return response.text();
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      return errJson.fallbackText || 'AI generation failed. Please review manually.';
+    }
+
+    const data = await response.json();
+    return data.text || 'AI generation failed. Please review manually.';
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return "AI generation failed. Please review manually.";
+    console.error('Gemini Service Client Error:', error);
+    return 'AI generation failed. Please review manually.';
   }
 }
+
