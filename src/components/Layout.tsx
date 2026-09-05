@@ -337,12 +337,12 @@ export default function Layout() {
                   {isOnline ? (
                     <>
                       <Wifi className="w-3 h-3 text-emerald-500" />
-                      Live Connection
+                      Live
                     </>
                   ) : (
                     <>
                       <WifiOff className="w-3 h-3 text-red-500" />
-                      Offline Mode
+                      Offline
                     </>
                   )}
                 </span>
