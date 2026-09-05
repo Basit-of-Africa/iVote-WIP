@@ -389,7 +389,7 @@ export default function Layout() {
              <PushNotificationPrompt compact />
 
              {/* Emergency / Threat Alert */}
-             <DangerButton variant="header" className="!h-9 !py-0 !rounded-xl text-xs" />
+             <DangerButton variant="header" label="SOS" className="!h-9 !py-0 !rounded-xl text-xs" />
 
              {/* Subtle Divider */}
              <div className="h-5 w-px bg-gray-200 mx-0.5" />

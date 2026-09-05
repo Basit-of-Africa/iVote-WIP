@@ -20,7 +20,7 @@ export default function DangerButton({ variant = 'header', className = '', label
       >
         <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0" />
         <Siren className="w-4 h-4 text-white group-hover:rotate-12 transition-transform shrink-0" />
-        <span className="font-black text-xs whitespace-nowrap">{label || 'DANGER SOS'}</span>
+        <span className="font-black text-xs whitespace-nowrap">{label || 'SOS'}</span>
       </button>
 
       <DangerAlertModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
