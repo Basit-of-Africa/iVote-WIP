@@ -387,7 +387,6 @@ export default function Layout() {
              </button>
 
              <PushNotificationPrompt compact />
-             <InstallPWAButton />
 
              {/* Emergency / Threat Alert */}
              <DangerButton variant="header" className="!h-9 !py-0 !rounded-xl text-xs" />
