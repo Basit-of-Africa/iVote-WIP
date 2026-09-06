@@ -365,16 +365,6 @@ export default function Layout() {
                <ElectionScopeSelector compact />
              </div>
 
-             {/* Primary Quick Action: Submit Field Report */}
-             <Link
-               to="/report"
-               className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer select-none"
-               title="Submit New Field Observation Report"
-             >
-               <PlusCircle className="w-3.5 h-3.5" />
-               <span className="hidden xl:inline">Submit Report</span>
-             </Link>
-
              {/* Guidelines & Conduct */}
              <button
                type="button"
